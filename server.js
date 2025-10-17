@@ -9,6 +9,37 @@ const { v4: uuidv4 } = require("uuid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// - Request logging middleware
+const logger = (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url}`);
+  next();
+};
+
+// - Authentication middleware
+const authenticate = (req, res, next) => {
+  const apiKey = req.headers["x-api-key"];
+
+  if (!apiKey || apiKey !== "mySecretApiKey") {
+    return res.status(401).json({ message: "Unauthorized: invalid API key" });
+  }
+  next();
+};
+
+// validation middleware
+const validateProduct = (req, res, next) => {
+  const { name, price, category } = req.body;
+
+  if (!name || !price || !category) {
+    return res.status(400).json({
+      message: "Name, price, and category are required fields.",
+    });
+  }
+  next();
+};
+
+app.use(logger);
+
 // Middleware setup
 app.use(bodyParser.json());
 
@@ -47,8 +78,6 @@ app.get("/", (req, res) => {
   );
 });
 
-// TODO: Implement the following routes:
-
 // GET /api/products - Get all products
 // Example route implementation for GET /api/products
 app.get("/api/products", (req, res) => {
@@ -68,7 +97,7 @@ app.get("/api/products/:id", (req, res) => {
 });
 
 // POST /api/products - Create a new product
-app.post("/api/products", (req, res) => {
+app.post("/api/products", authenticate, validateProduct, (req, res) => {
   const { name, description, price, category, inStock } = req.body;
   // Basic validation (check if required fields exist)
   if (!name || !price || !category) {
@@ -77,7 +106,7 @@ app.post("/api/products", (req, res) => {
       .json({ message: "Name, price, and category are required." });
   }
 
-  // create a new product
+  // create a new productF
   const newProduct = {
     id: uuidv4(),
     name,
@@ -91,7 +120,7 @@ app.post("/api/products", (req, res) => {
 });
 
 // PUT /api/products/:id - Update a product
-app.put("/api/products/:id", (req, res) => {
+app.put("/api/products/:id", authenticate, (req, res) => {
   const { id } = req.params;
   const { name, description, price, category, inStock } = req.body;
 
@@ -112,7 +141,7 @@ app.put("/api/products/:id", (req, res) => {
 });
 
 // DELETE /api/products/:id - Delete a product
-app.delete("/api/products/:id", (req, res) => {
+app.delete("/api/products/:id", authenticate, (req, res) => {
   const { id } = req.params;
 
   // Find the index of the product with that ID
@@ -133,11 +162,7 @@ app.delete("/api/products/:id", (req, res) => {
 });
 
 // TODO: Implement custom middleware for:
-// - Request logging
-// - Authentication
 // - Error handling
-
-
 
 // Start the server
 app.listen(PORT, () => {
