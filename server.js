@@ -48,9 +48,6 @@ app.get("/", (req, res) => {
 });
 
 // TODO: Implement the following routes:
-// POST /api/products - Create a new product
-// PUT /api/products/:id - Update a product
-// DELETE /api/products/:id - Delete a product
 
 // GET /api/products - Get all products
 // Example route implementation for GET /api/products
@@ -70,7 +67,8 @@ app.get("/api/products/:id", (req, res) => {
   res.json(product);
 });
 
-app.get("/api/products", (req, res) => {
+// POST /api/products - Create a new product
+app.post("/api/products", (req, res) => {
   const { name, description, price, category, inStock } = req.body;
   // Basic validation (check if required fields exist)
   if (!name || !price || !category) {
@@ -92,10 +90,54 @@ app.get("/api/products", (req, res) => {
   res.status(201).json(newProduct);
 });
 
+// PUT /api/products/:id - Update a product
+app.put("/api/products/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, description, price, category, inStock } = req.body;
+
+  // Find the product by ID
+  const product = products.find((p) => p.id === id);
+  if (!product) {
+    return res.status(404).json({ message: "Product not found. " });
+  }
+
+  // Update the product fields (only if new values are provided)
+  if (name !== undefined) product.name = name;
+  if (description !== undefined) product.description = description;
+  if (price !== undefined) product.price = price;
+  if (category !== undefined) product.category = category;
+  if (inStock !== undefined) product.inStock = inStock;
+
+  res.json({ message: "Product updated successfully.", product });
+});
+
+// DELETE /api/products/:id - Delete a product
+app.delete("/api/products/:id", (req, res) => {
+  const { id } = req.params;
+
+  // Find the index of the product with that ID
+  const productIndex = products.findIndex((p) => p.id === id);
+
+  //if not found return error
+  if (productIndex === -1) {
+    return res.status(404).json({ message: "Product not found." });
+  }
+
+  // remove the product from the array
+  const deletedProduct = products.splice(productIndex, 1);
+
+  res.json({
+    message: "Product deleted successfully.",
+    product: deletedProduct[0],
+  });
+});
+
 // TODO: Implement custom middleware for:
 // - Request logging
 // - Authentication
 // - Error handling
+
+
 
 // Start the server
 app.listen(PORT, () => {
