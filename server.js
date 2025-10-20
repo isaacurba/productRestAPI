@@ -106,8 +106,19 @@ app.get("/", (req, res) => {
 });
 
 // GET all products
+// category filter
 app.get("/api/products", (req, res) => {
-  res.json(products);
+  const { category } = req.query;
+  let results = products;
+
+  // if category query is present
+  if (category){
+    results = products.filter(
+      (p) => p.category.toLowerCase() === category.toLowerCase()
+    )
+  }
+
+  res.json(results);
 });
 
 // GET one product
