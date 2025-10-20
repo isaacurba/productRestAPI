@@ -73,6 +73,31 @@ function validateProduct(req, res, next) {
   next();
 }
 
+// Custom Error Classes
+class NotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "NotFoundError";
+    this.statusCode = 404;
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ValidationError";
+    this.statusCode = 400;
+  }
+}
+
+class AuthError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "AuthError";
+    this.statusCode = 401;
+  }
+}
+
 // Root route
 app.get("/", (req, res) => {
   res.send(
@@ -86,10 +111,16 @@ app.get("/api/products", (req, res) => {
 });
 
 // GET one product
-app.get("/api/products/:id", (req, res) => {
-  const product = products.find((p) => p.id === req.params.id);
-  if (!product) return res.status(404).json({ message: "Product not found" });
-  res.json(product);
+app.get("/api/products/:id", (req, res, next) => {
+  try {
+    const product = products.find((p) => p.id === req.params.id);
+    // logic before custom error handler
+    // if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product) throw new NotFoundError("Product not found");
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // POST create a product (with authentication + validation)
@@ -129,6 +160,21 @@ app.delete("/api/products/:id", authenticate, (req, res) => {
     return res.status(404).json({ message: "Product not found" });
   const deleted = products.splice(index, 1);
   res.json({ message: "Product deleted successfully", deleted });
+});
+
+//Global error handler
+app.use((err, req, res, next) => {
+  console.error("Error:", err.message);
+
+  const status = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  res.status(status).json({
+    error: {
+      name: err.name || "server error",
+      message,
+    },
+  });
 });
 
 // Start server
