@@ -132,6 +132,34 @@ app.get("/api/products", (req, res) => {
   });
 });
 
+// search products by name
+app.get("/api/products/search", (req, res) => {
+  const { name } = req.query;
+  if (!name)
+    return res.status(400).json({ message: "Pls provide a name to search" });
+
+  // case sensitive search
+  const results = products.filter((p) =>
+    p.name.toLowerCase().includes(name.toLowerCase())
+  );
+  if (results.length === 0)
+    return res.status(404).json({ message: "No products found." });
+  res.json({ results });
+});
+
+// products stats
+app.get("/api/products/stats", (req, res) => {
+  const stats = {};
+
+  products.forEach((p) => {
+    stats[p.category] = (stats[p.category] || 0) + 1;
+  });
+  res.json({
+    totalProducts: products.length,
+    countByCategory: stats,
+  });
+});
+
 // GET one product
 app.get("/api/products/:id", (req, res, next) => {
   try {
