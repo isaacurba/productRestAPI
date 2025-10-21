@@ -4,6 +4,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
+const { parse } = require("dotenv");
 
 // Initialize Express app
 const app = express();
@@ -106,19 +107,29 @@ app.get("/", (req, res) => {
 });
 
 // GET all products
-// category filter
+
+// category filter AND pagination
 app.get("/api/products", (req, res) => {
-  const { category } = req.query;
+  const { category, page = 1, limit = 5 } = req.query;
   let results = products;
 
   // if category query is present
-  if (category){
+  if (category) {
     results = products.filter(
       (p) => p.category.toLowerCase() === category.toLowerCase()
-    )
+    );
   }
+  // pagination logic
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + parseInt(limit);
+  const paginatedResults = results.slice(startIndex, endIndex);
 
-  res.json(results);
+  res.json({
+    currentPage: parseInt(page),
+    totalPages: Math.ceil(results.length / limit),
+    totalProducts: results.length,
+    products: paginatedResults,
+  });
 });
 
 // GET one product
